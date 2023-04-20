@@ -5,6 +5,7 @@ use poise::serenity_prelude as serenity;
 
 // in case I actually need to store this shit
 // struct UserData {}
+type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, (), Error>;
 
 #[poise::command(slash_command)]
