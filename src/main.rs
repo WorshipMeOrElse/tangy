@@ -1,9 +1,12 @@
+mod commands;
+
 use dotenv::dotenv;
 use poise::serenity_prelude as serenity;
 
-struct UserData {}
+// in case I actually need to store this shit
+// struct UserData {}
 type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, UserData, Error>;
+type Context<'a> = poise::Context<'a, (), Error>;
 
 #[poise::command(slash_command)]
 async fn ping(ctx: Context<'_>) -> Result<(), Error> {
@@ -18,7 +21,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![ping()],
+            commands: vec![ping(), commands::help::help()],
             ..Default::default()
         })
         .token(std::env::var("TOKEN").expect("missing bot token"))
@@ -26,7 +29,7 @@ async fn main() {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(UserData {})
+                Ok(())
             })
         });
 
