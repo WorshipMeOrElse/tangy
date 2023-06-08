@@ -1,6 +1,10 @@
+use std::time::Duration;
+
 use crate::Context;
 use crate::Error;
 use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::ChannelId;
+//use poise::serenity_prelude::CacheHttp;
 
 #[poise::command(slash_command)]
 pub async fn embed(
@@ -11,7 +15,6 @@ pub async fn embed(
     #[description = "Hex color of embed (without hashtag)"] hex: Option<String>,
     #[description = "url of embed thumbnail"] thumbnail: Option<String>,
     #[description = "url of embed image"] image: Option<String>,
-    #[description = "channel where embed should be placed"] channel: Option<serenity::GuildChannel>,
 ) -> Result<(), Error> {
     let embed_title = title.unwrap_or_else(|| "".to_string());
     let embed_description = description.unwrap_or_else(|| "".to_string());
@@ -26,36 +29,24 @@ pub async fn embed(
     let embed_thumbnail = thumbnail.unwrap_or_else(|| "".to_string());
     let embed_image = image.unwrap_or_else(|| "".to_string());
 
-    if channel.is_some() {
-        channel
-            .unwrap()
-            .send_message(ctx, |m| {
-                m.embed(|e| {
-                    e.title(embed_title)
-                        .description(embed_description)
-                        .color(serenity::utils::Colour::from(color))
-                        //.thumbnail("https://media.discordapp.net/attachments/1055541263757234199/1098370280730132550/New_Project.png?width=662&height=662")
-                        .footer(|f| f.text(embed_footer))
-                        .thumbnail(embed_thumbnail)
-                        .image(embed_image)
-                })
-            })
-            .await?;
-            ctx.send(|m| m.content("Sent message to channel!".to_string())).await?;
-    } else {
-        ctx.send(|m| {
-            m.embed(|e| {
-                e.title(embed_title)
-                    .description(embed_description)
-                    .color(serenity::utils::Colour::from(color))
-                    //.thumbnail("https://media.discordapp.net/attachments/1055541263757234199/1098370280730132550/New_Project.png?width=662&height=662")
-                    .footer(|f| f.text(embed_footer))
-                    .thumbnail(embed_thumbnail)
-                    .image(embed_image)
-            })
-        })
-        .await?;
-    }
+    // TODO: make an embed in a separate message and just use ctx.send to confirm
+    //
+    ChannelId(ctx.channel_id().into()).send_message(ctx, |m|
+        m.embed(|e| {
+            e.title(embed_title)
+                .description(embed_description)
+                .color(serenity::utils::Colour::from(color))
+                .footer(|f| f.text(embed_footer))
+                .thumbnail(embed_thumbnail)
+                .image(embed_image)
+        })).await?;
+
+    let reply = ctx.send(|m| 
+        m.content("Embed sent! this message will automatically delete in 5 seconds!")).await;
+
+    tokio::time::sleep(Duration::new(5, 0)).await;
+
+    reply?.delete(ctx).await?;
 
     Ok(())
 }
